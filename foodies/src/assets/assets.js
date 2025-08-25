@@ -7,13 +7,16 @@ import icecream from './icecream.png';
 import salad from './salad.png';
 import cake from './cake.png';
 import rolls from './rolls.png';
-import profile from './profile.png'
-
+import profile from './profile.png';
+import delivery from './delivery.png';
+import background from './background.png';
 
 export const assets = {
     logo, 
     cart,
-    profile
+    profile,
+    delivery,
+    background
 }
 
 export const category = [

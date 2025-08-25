@@ -9,7 +9,7 @@ import lombok.Data;
 @Builder
 public class OrderRequest {
     
-    private List<OrderItem> orderedItem;
+    private List<OrderItem> orderedItems;
     private String address;
     private double amount;
     private String email;

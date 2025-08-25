@@ -1,6 +1,8 @@
 package in.dabiaditya.foodiesapi.services;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,7 @@ public class OrderServiceImpl implements OrderService {
         //create razorpay payment order
         RazorpayClient razorpayClient = new RazorpayClient(RAZORPAY_KEY, RAZORPAY_SECRET);
         JSONObject orderRequest = new JSONObject();
-        orderRequest.put("amount", newOrder.getAmount());
+        orderRequest.put("amount", newOrder.getAmount()*100);
         orderRequest.put("currency", "INR");
         orderRequest.put("payment_capture", 1);
 
@@ -50,9 +52,10 @@ public class OrderServiceImpl implements OrderService {
         newOrder.setRazorpayOrderId(razorpayOrder.get("id"));
         String loggedInUserId = userService.findByUserId();
         newOrder.setUserId(loggedInUserId);
+        System.out.println("newOrder = "+ newOrder);
         newOrder = orderRepository.save(newOrder);
-        return convertToResponse(newOrder);
 
+        return convertToResponse(newOrder);
     }
 
     private OrderResponse convertToResponse(OrderEntity neworder){
@@ -66,6 +69,7 @@ public class OrderServiceImpl implements OrderService {
                         .orderStatus(neworder.getOrderStatus())
                         .email(neworder.getEmail())
                         .phoneNumber(neworder.getPhoneNumber())
+                        .orderedItems(neworder.getOrderedItems())
                         .build();
     }
 
@@ -73,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
         return OrderEntity.builder()
                     .userAddress(request.getAddress())
                     .amount(request.getAmount())
-                    .orderedItems(request.getOrderedItem())
+                    .orderedItems(request.getOrderedItems())
                     .email(request.getEmail())
                     .phoneNumber(request.getPhoneNumber())
                     .orderStatus(request.getOrderStatus())
@@ -92,6 +96,31 @@ public class OrderServiceImpl implements OrderService {
         if("paid".equalsIgnoreCase(status)){
             cartRepository.deleteByUserId(existingOrder.getUserId());
         }
+    }
+
+    @Override
+    public List<OrderResponse> getUserOrders() {
+        String loggedInUserId = userService.findByUserId();
+        List<OrderEntity> list = orderRepository.findByUserId(loggedInUserId);
+        return list.stream().map(entity -> convertToResponse(entity)).collect(Collectors.toList());
+    }
+
+    @Override
+    public void removeOrder(String orderId) {
+        orderRepository.deleteById(orderId);
+    }
+
+    @Override
+    public List<OrderResponse> getOrdersOfAllUsers() {
+        List<OrderEntity> list = orderRepository.findAll();
+        return list.stream().map(entity -> convertToResponse(entity)).collect(Collectors.toList());
+    }
+
+    @Override
+    public void updateOrderStatus(String orderId, String status) {
+        OrderEntity entity = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        entity.setOrderStatus(status);
+        orderRepository.save(entity);
     }
     
 }
